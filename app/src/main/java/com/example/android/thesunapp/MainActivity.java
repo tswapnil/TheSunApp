@@ -54,10 +54,7 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.F
     @Override
     public void onClick(String weatherForDay) {
         Context context = this;
-        // TODO (1) Create a new Activity called DetailActivity using Android Studio's wizard
-        // TODO (2) Change the root layout of activity_detail.xml to a FrameLayout and remove unnecessary xml attributes
-        // TODO (3) Remove the Toast and launch the DetailActivity using an explicit Intent
-       Toast.makeText(context, weatherForDay, Toast.LENGTH_LONG)
+        Toast.makeText(context, weatherForDay, Toast.LENGTH_LONG)
                 .show();
        Intent intent = new Intent(context, DetailActivity.class);
         intent.putExtra("ExtraData", weatherForDay);

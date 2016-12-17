@@ -43,7 +43,6 @@ public class DetailActivity extends AppCompatActivity {
     }
     @Override
     public boolean onOptionsItemSelected(MenuItem menuItem){
-        int itemThatWasClicked = menuItem.getItemId();
 
         return super.onOptionsItemSelected(menuItem);
     }
