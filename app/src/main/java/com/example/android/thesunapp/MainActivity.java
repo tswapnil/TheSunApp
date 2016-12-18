@@ -1,8 +1,14 @@
 package com.example.android.thesunapp;
 
 import android.content.Context;
+import android.content.CursorLoader;
+import android.database.Cursor;
 import android.os.AsyncTask;
+import android.support.v4.app.LoaderManager;
 import android.support.v4.app.SupportActivity;
+import android.support.v4.content.*;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
@@ -16,7 +22,7 @@ import android.content.*;
 import android.support.v4.app.ShareCompat;
 import android.util.*;
 import android.net.*;
-public class MainActivity extends AppCompatActivity implements ForecastAdapter.ForecastAdapterOnClickHandler {
+public class MainActivity extends AppCompatActivity implements ForecastAdapter.ForecastAdapterOnClickHandler , LoaderManager.LoaderCallbacks<String[]> {
 
 
     private TextView tvDisplay;
@@ -24,6 +30,7 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.F
     private ProgressBar pBar;
     private ForecastAdapter fAdapter;
     private RecyclerView recyclerView;
+    private static final int LoaderID = 372;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,6 +51,7 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.F
 
         fAdapter = new ForecastAdapter(this);
         recyclerView.setAdapter(fAdapter);
+        getSupportLoaderManager().initLoader(LoaderID,null,this);
         loadWeatherData();
     }
     @Override
@@ -108,7 +116,19 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.F
                hView.setVisibility(View.INVISIBLE);
                pBar.setVisibility(View.INVISIBLE);
                String location = SunshinePreferences.getPreferredWeatherLocation(this);
-               new FetchWeatherTask().execute(location);
+        Bundle bundle = new Bundle();
+        bundle.putString("Location", location);
+
+        LoaderManager loaderManager = getSupportLoaderManager();
+        Loader<String> gitHubLoader = loaderManager.getLoader(LoaderID);
+        if (gitHubLoader == null){
+            loaderManager.initLoader(LoaderID,bundle,this);
+        }
+        else{
+            loaderManager.restartLoader(LoaderID, bundle, this);
+        }
+
+            //   new FetchWeatherTask().execute(location);
     }
     private void showWeatherDataView() {
         /* First, make sure the error is invisible */
@@ -122,6 +142,82 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.F
         /* Then, show the error */
         hView.setVisibility(View.VISIBLE);
     }
+
+    /**
+     * Instantiate and return a new Loader for the given ID.
+     *
+     * @param id   The ID whose loader is to be created.
+     * @param args Any arguments supplied by the caller.
+     * @return Return a new Loader instance that is ready to start loading.
+     */
+    @Override
+    public Loader<String[]> onCreateLoader(int id, final Bundle args) {
+        return new AsyncTaskLoader<String[]>(this) {
+            @Override
+            protected void onStartLoading(){
+                if(args==null){
+                    return;
+                }
+
+                pBar.setVisibility(View.VISIBLE);
+                forceLoad();
+            }
+            @Override
+            public String[] loadInBackground() {
+
+                String location = args.getString("Location");
+                URL weatherURL = NetworkUtils.buildUrl(location);
+                try {
+                    String jsonWeatherResponse = NetworkUtils
+                            .getResponseFromHttpUrl(weatherURL);
+                    String[] simpleJsonWeatherData = OpenWeatherJsonUtils
+                            .getSimpleWeatherStringsFromJson(MainActivity.this, jsonWeatherResponse);
+
+                    return simpleJsonWeatherData;
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
+                }
+
+            }
+        };
+    }
+
+
+    @Override
+    public void onLoadFinished(Loader<String[]> loader, String[] data) {
+        pBar.setVisibility(View.INVISIBLE);
+        if (data != null) {
+
+            //   for (String weatherString : weatherData) {
+            //             tvDisplay.append((weatherString) + "\n\n\n");
+            //         }
+            showWeatherDataView();
+            fAdapter.setWeatherData(data);
+
+        }
+        else{
+            //  tvDisplay.setText("");
+            showErrorMessage();
+            hView.setVisibility(View.VISIBLE);
+
+        }
+
+    }
+
+    /**
+     * Called when a previously created loader is being reset, and thus
+     * making its data unavailable.  The application should at this point
+     * remove any references it has to the Loader's data.
+     *
+     * @param loader The Loader that is being reset.
+     */
+    @Override
+    public void onLoaderReset(Loader<String[]> loader) {
+
+    }
+
     public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
         @Override
         protected void onPreExecute(){
@@ -155,9 +251,8 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.F
               pBar.setVisibility(View.INVISIBLE);
                    if (weatherData != null) {
 
-
                  //   for (String weatherString : weatherData) {
-                //             tvDisplay.append((weatherString) + "\n\n\n");
+                 //             tvDisplay.append((weatherString) + "\n\n\n");
                  //         }
                        showWeatherDataView();
                        fAdapter.setWeatherData(weatherData);
