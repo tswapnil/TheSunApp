@@ -11,6 +11,7 @@ import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.preference.PreferenceManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,7 +23,7 @@ import android.content.*;
 import android.support.v4.app.ShareCompat;
 import android.util.*;
 import android.net.*;
-public class MainActivity extends AppCompatActivity implements ForecastAdapter.ForecastAdapterOnClickHandler , LoaderManager.LoaderCallbacks<String[]> {
+public class MainActivity extends AppCompatActivity implements ForecastAdapter.ForecastAdapterOnClickHandler , LoaderManager.LoaderCallbacks<String[]>,SharedPreferences.OnSharedPreferenceChangeListener {
 
 
     private TextView tvDisplay;
@@ -31,6 +32,8 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.F
     private ForecastAdapter fAdapter;
     private RecyclerView recyclerView;
     private static final int LoaderID = 372;
+    private static boolean PREFERENCES_HAVE_BEEN_UPDATED = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,6 +56,9 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.F
         recyclerView.setAdapter(fAdapter);
         getSupportLoaderManager().initLoader(LoaderID,null,this);
         loadWeatherData();
+        PreferenceManager.getDefaultSharedPreferences(this)
+                               .registerOnSharedPreferenceChangeListener(this);
+
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu){
@@ -69,19 +75,45 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.F
         startActivity(intent);
     }
     private void openLocationInMap() {
-                String addressString = "1600 Ampitheatre Parkway, CA";
+        //  String addressString = "1600 Ampitheatre Parkway, CA";
+        String addressString = SunshinePreferences.getPreferredWeatherLocation(this);
                 Uri geoLocation = Uri.parse("geo:0,0?q=" + addressString);
 
-                        Intent intent = new Intent(Intent.ACTION_VIEW);
+                Intent intent = new Intent(Intent.ACTION_VIEW);
                 intent.setData(geoLocation);
 
-                        if (intent.resolveActivity(getPackageManager()) != null) {
+                if (intent.resolveActivity(getPackageManager()) != null) {
                         startActivity(intent);
-                    } else {
+                 } else {
                         Log.d("Main Activity", "Couldn't call " + geoLocation.toString()
                                        + ", no receiving apps installed!");
                     }
             }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (PREFERENCES_HAVE_BEEN_UPDATED) {
+            Log.d("Main Activity", "onStart: preferences were updated");
+         //   getSupportLoaderManager().restartLoader(LoaderID, null, this);
+           loadWeatherData();
+            PREFERENCES_HAVE_BEEN_UPDATED = false;
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        PreferenceManager.getDefaultSharedPreferences(this)
+                         .unregisterOnSharedPreferenceChangeListener(this);
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem menuItem){
         int itemThatWasClicked = menuItem.getItemId();
@@ -106,6 +138,12 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.F
         }
         if(itemThatWasClicked == R.id.action_map){
             openLocationInMap();
+            return true;
+        }
+        if(itemThatWasClicked == R.id.setting_action){
+            Context context = this;
+            Intent intent = new Intent(context, SettingsActivity.class);
+            startActivity(intent);
             return true;
         }
         return super.onOptionsItemSelected(menuItem);
@@ -216,6 +254,11 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.F
     @Override
     public void onLoaderReset(Loader<String[]> loader) {
 
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
+        PREFERENCES_HAVE_BEEN_UPDATED = true;
     }
 
     public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {

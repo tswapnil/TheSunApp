@@ -43,7 +43,13 @@ public class DetailActivity extends AppCompatActivity {
     }
     @Override
     public boolean onOptionsItemSelected(MenuItem menuItem){
+        int itemThatWasClicked = menuItem.getItemId();
 
+        if(itemThatWasClicked == R.id.detail_setting_action){
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivity(intent);
+            return true;
+        }
         return super.onOptionsItemSelected(menuItem);
     }
 }

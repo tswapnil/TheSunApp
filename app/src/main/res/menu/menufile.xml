@@ -7,21 +7,23 @@
         android:orderInCategory="1"
         app:showAsAction="ifRoom"
         android:id="@+id/refresh_action"
-        android:icon="@drawable/ic_rain"></item>
+        android:icon="@drawable/ic_rain"/>
 
     <item
         android:title="Share Thoughts"
         android:orderInCategory="2"
-        app:showAsAction="ifRoom"
         android:id="@+id/share_action"
-        android:icon="@drawable/ic_snow"></item>
+        android:icon="@drawable/ic_snow"/>
 
     <item
         android:title="Open Maps"
-        android:orderInCategory="2"
-        app:showAsAction="ifRoom"
+        android:orderInCategory="3"
         android:id="@+id/action_map"
-        android:icon="@drawable/ic_snow"></item>
-
+        android:icon="@drawable/ic_snow"/>
+    <item
+        android:title="Settings"
+        android:orderInCategory="4"
+        android:id="@+id/setting_action"
+        android:icon="@drawable/ic_snow"/>
 
 </menu>

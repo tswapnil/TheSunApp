@@ -124,8 +124,31 @@
     <string name="condition_962">Hurricane</string>
 
     <string name="condition_unknown">Unknown (<xliff:g id="conditionId">%1$d</xliff:g>)</string>
-    <string name="refresh_string"></string>
+    <string name="refresh_string">Refresh</string>
     <string name="error_string">Failed to retrieve the data, please try again</string>
+    <string name="pref_c_label">Celcius</string>
+    <string name="pref_f_label">Fahrenheit</string>
+    <string name="pref_edit_key">location</string>
+    <string name="pref_edit_default">94043,USA</string>
+    <string name="pref_list_key" translatable="false">units</string>
+    <string name="pref_units_label">Temperature Units</string>
+
+    <!-- Label for metric option in temperature unit preference [CHAR LIMIT=25] -->
+    <string name="pref_units_label_metric">Metric</string>
+
+    <!-- Label for imperial option in temperature unit preference [CHAR LIMIT=25] -->
+    <string name="pref_units_label_imperial">Imperial</string>
+
+    <!-- Key name for temperature unit preference in SharedPreferences [CHAR LIMIT=NONE] -->
+    <string name="pref_units_key" translatable="false">units</string>
+
+    <!-- Value in SharedPreferences for metric temperature unit option [CHAR LIMIT=NONE] -->
+    <string name="pref_units_metric" translatable="false">metric</string>
+
+    <!-- Value in SharedPreferences for imperial temperature unit option [CHAR LIMIT=NONE] -->
+    <string name="pref_units_imperial" translatable="false">imperial</string>
+
+
     <!-- - - - - - - - - - - -->
     <!-- Used by NetworkUtils-->
     <!-- - - - - - -

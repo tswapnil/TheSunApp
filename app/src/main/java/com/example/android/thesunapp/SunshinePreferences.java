@@ -1,6 +1,9 @@
 package com.example.android.thesunapp;
 
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.support.v7.preference.Preference;
+import android.support.v7.preference.PreferenceManager;
 
 /**
  * Created by Swapnil on 14-12-2016.
@@ -72,7 +75,12 @@ public class SunshinePreferences {
      */
     public static String getPreferredWeatherLocation(Context context) {
         /** This will be implemented in a future lesson **/
-        return getDefaultWeatherLocation();
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        String key = context.getString(R.string.pref_edit_key);
+        String defaultLoc = context.getString(R.string.pref_edit_default);
+
+
+        return preferences.getString(key,defaultLoc);
     }
 
     /**
@@ -82,8 +90,21 @@ public class SunshinePreferences {
      * @return true If metric display should be used
      */
     public static boolean isMetric(Context context) {
-        /** This will be implemented in a future lesson **/
-        return true;
+
+        SharedPreferences prefs = PreferenceManager
+                               .getDefaultSharedPreferences(context);
+                String keyForUnits = context.getString(R.string.pref_list_key);
+                String defaultUnits = context.getString(R.string.pref_units_metric);
+                String preferredUnits = prefs.getString(keyForUnits, defaultUnits);
+                String metric = context.getString(R.string.pref_units_metric);
+                boolean userPrefersMetric;
+               if (metric.equals(preferredUnits)) {
+                        userPrefersMetric = true;
+                    } else {
+                        userPrefersMetric = false;
+                    }
+                return userPrefersMetric;
+
     }
 
     /**

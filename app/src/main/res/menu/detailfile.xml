@@ -4,8 +4,12 @@
     <item
         android:title="Share Thoughts"
         android:orderInCategory="1"
-        app:showAsAction="ifRoom"
         android:id="@+id/share_detail_action"
-        android:icon="@drawable/ic_snow"></item>
+        android:icon="@drawable/ic_snow"/>
 
+    <item
+        android:title="Settings"
+        android:orderInCategory="2"
+        android:id="@+id/detail_setting_action"
+        android:icon="@drawable/ic_snow"/>
 </menu>
