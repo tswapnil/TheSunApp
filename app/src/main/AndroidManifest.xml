@@ -35,6 +35,18 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".DetailActivity" />
         </activity>
+        <provider
+            android:authorities="com.example.android.thesunapp"
+            android:name="com.example.android.thesunapp.WeatherProvider"
+            android:exported="true"/>
+        <service android:name=".SunshineSyncIntentService"
+                 android:exported="false"/>
+        <service android:name=".SunshineFirebaseJobService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.firebase.jobdispatcher.ACTION_EXECUTE"/>
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

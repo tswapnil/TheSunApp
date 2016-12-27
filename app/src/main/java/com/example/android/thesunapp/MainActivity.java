@@ -1,7 +1,7 @@
 package com.example.android.thesunapp;
 
 import android.content.Context;
-import android.content.CursorLoader;
+import android.support.v4.content.CursorLoader;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.support.v4.app.LoaderManager;
@@ -23,7 +23,7 @@ import android.content.*;
 import android.support.v4.app.ShareCompat;
 import android.util.*;
 import android.net.*;
-public class MainActivity extends AppCompatActivity implements ForecastAdapter.ForecastAdapterOnClickHandler , LoaderManager.LoaderCallbacks<String[]>,SharedPreferences.OnSharedPreferenceChangeListener {
+public class MainActivity extends AppCompatActivity implements ForecastAdapter.ForecastAdapterOnClickHandler , LoaderManager.LoaderCallbacks<Cursor>,SharedPreferences.OnSharedPreferenceChangeListener {
 
 
     private TextView tvDisplay;
@@ -31,14 +31,35 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.F
     private ProgressBar pBar;
     private ForecastAdapter fAdapter;
     private RecyclerView recyclerView;
+    private int mPosition = RecyclerView.NO_POSITION;
     private static final int LoaderID = 372;
     private static boolean PREFERENCES_HAVE_BEEN_UPDATED = false;
+    public static final String[] MAIN_FORECAST_PROJECTION = {
+            WeatherContract.WeatherEntry.COLUMN_DATE,
+            WeatherContract.WeatherEntry.COLUMN_MAX_TEMP,
+            WeatherContract.WeatherEntry.COLUMN_MIN_TEMP,
+            WeatherContract.WeatherEntry.COLUMN_WEATHER_ID,
+    };
+
+    //  COMPLETED (17) Create constant int values representing each column name's position above
+    /*
+     * We store the indices of the values in the array of Strings above to more quickly be able to
+     * access the data from our query. If the order of the Strings above changes, these indices
+     * must be adjusted to match the order of the Strings.
+     */
+    public static final int INDEX_WEATHER_DATE = 0;
+    public static final int INDEX_WEATHER_MAX_TEMP = 1;
+    public static final int INDEX_WEATHER_MIN_TEMP = 2;
+    public static final int INDEX_WEATHER_CONDITION_ID = 3;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
        // tvDisplay = (TextView) findViewById(R.id.tv_weather);
+       // getSupportActionBar().setElevation(0f);
+
         hView = (TextView) findViewById(R.id.hidden_view);
         hView.setVisibility(View.INVISIBLE);
         hView.setText(R.string.error_string);
@@ -52,12 +73,13 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.F
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setHasFixedSize(true);
 
-        fAdapter = new ForecastAdapter(this);
+        fAdapter = new ForecastAdapter(this,this);
         recyclerView.setAdapter(fAdapter);
         getSupportLoaderManager().initLoader(LoaderID,null,this);
         loadWeatherData();
         PreferenceManager.getDefaultSharedPreferences(this)
                                .registerOnSharedPreferenceChangeListener(this);
+        SunshineSyncUtils.intialise(this);
 
     }
     @Override
@@ -66,13 +88,17 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.F
         return true;
     }
     @Override
-    public void onClick(String weatherForDay) {
+    public void onClick(long date) {
         Context context = this;
-        Toast.makeText(context, weatherForDay, Toast.LENGTH_LONG)
-                .show();
-       Intent intent = new Intent(context, DetailActivity.class);
-        intent.putExtra("ExtraData", weatherForDay);
-        startActivity(intent);
+     //    Toast.makeText(context, weatherForDay, Toast.LENGTH_LONG)
+     //           .show();
+     //   Intent intent = new Intent(context, DetailActivity.class);
+     //   intent.putExtra("ExtraData", weatherForDay);
+     //   startActivity(intent);
+        Intent weatherDetailIntent = new Intent(MainActivity.this, DetailActivity.class);
+        Uri uriForDateClicked = WeatherContract.WeatherEntry.buildWeatherUriWithDate(date);
+        weatherDetailIntent.setData(uriForDateClicked);
+        startActivity(weatherDetailIntent);
     }
     private void openLocationInMap() {
         //  String addressString = "1600 Ampitheatre Parkway, CA";
@@ -189,8 +215,38 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.F
      * @return Return a new Loader instance that is ready to start loading.
      */
     @Override
-    public Loader<String[]> onCreateLoader(int id, final Bundle args) {
-        return new AsyncTaskLoader<String[]>(this) {
+    public Loader<Cursor> onCreateLoader(int id, final Bundle args) {
+        switch (id) {
+
+//          COMPLETED (22) If the loader requested is our forecast loader, return the appropriate CursorLoader
+            case LoaderID:
+                /* URI for all rows of weather data in our weather table */
+                Uri forecastQueryUri = WeatherContract.WeatherEntry.CONTENT_URI;
+                /* Sort order: Ascending by date */
+                String sortOrder = WeatherContract.WeatherEntry.COLUMN_DATE + " ASC";
+                /*
+                 * A SELECTION in SQL declares which rows you'd like to return. In our case, we
+                 * want all weather data from today onwards that is stored in our weather table.
+                 * We created a handy method to do that in our WeatherEntry class.
+                 */
+                String selection = WeatherContract.WeatherEntry.getSqlSelectForTodayOnwards();
+
+                return new CursorLoader(this,
+                        forecastQueryUri,
+                        MAIN_FORECAST_PROJECTION,
+                        selection,
+                        null,
+                        sortOrder);
+
+            default:
+                throw new RuntimeException("Loader Not Implemented: " + id);
+        }
+
+
+
+
+
+        /**return new AsyncTaskLoader<Cursor>(this) {
             @Override
             protected void onStartLoading(){
                 if(args==null){
@@ -201,7 +257,7 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.F
                 forceLoad();
             }
             @Override
-            public String[] loadInBackground() {
+            public Cursor loadInBackground() {
 
                 String location = args.getString("Location");
                 URL weatherURL = NetworkUtils.buildUrl(location);
@@ -219,29 +275,37 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.F
                 }
 
             }
-        };
+        };**/
     }
 
 
     @Override
-    public void onLoadFinished(Loader<String[]> loader, String[] data) {
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         pBar.setVisibility(View.INVISIBLE);
-        if (data != null) {
+//        if (data != null) {
+//
+//            //   for (String weatherString : weatherData) {
+//            //             tvDisplay.append((weatherString) + "\n\n\n");
+//            //         }
+//            showWeatherDataView();
+//            fAdapter.swapCursor(data);
+//
+//        }
+//        else{
+//            //  tvDisplay.setText("");
+//            showErrorMessage();
+//            hView.setVisibility(View.VISIBLE);
+//
+//        }
 
-            //   for (String weatherString : weatherData) {
-            //             tvDisplay.append((weatherString) + "\n\n\n");
-            //         }
-            showWeatherDataView();
-            fAdapter.setWeatherData(data);
+        fAdapter.swapCursor(data);
+//      COMPLETED (29) If mPosition equals RecyclerView.NO_POSITION, set it to 0
+        if (mPosition == RecyclerView.NO_POSITION) mPosition = 0;
+//      COMPLETED (30) Smooth scroll the RecyclerView to mPosition
+        recyclerView.smoothScrollToPosition(mPosition);
 
-        }
-        else{
-            //  tvDisplay.setText("");
-            showErrorMessage();
-            hView.setVisibility(View.VISIBLE);
-
-        }
-
+//      COMPLETED (31) If the Cursor's size is not equal to 0, call showWeatherDataView
+        if (data.getCount() != 0) showWeatherDataView();
     }
 
     /**
@@ -252,9 +316,10 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.F
      * @param loader The Loader that is being reset.
      */
     @Override
-    public void onLoaderReset(Loader<String[]> loader) {
+    public void onLoaderReset(Loader<Cursor> loader) {
 
     }
+
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
@@ -309,6 +374,21 @@ public class MainActivity extends AppCompatActivity implements ForecastAdapter.F
                      }
                }
         }
+    private void openPreferredLocationInMap() {
+        double[] coords = SunshinePreferences.getLocationCoordinates(this);
+        String posLat = Double.toString(coords[0]);
+        String posLong = Double.toString(coords[1]);
+        Uri geoLocation = Uri.parse("geo:" + posLat + "," + posLong);
+
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(geoLocation);
+
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            startActivity(intent);
+        } else {
+            Log.d("MainActivity", "Couldn't call " + geoLocation.toString() + ", no receiving apps installed!");
+        }
+    }
 
     
 }
